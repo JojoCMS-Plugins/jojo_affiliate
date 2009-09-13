@@ -1,0 +1,1 @@
+A basic affiliate scheme - requires some integration with your payment gateway.
