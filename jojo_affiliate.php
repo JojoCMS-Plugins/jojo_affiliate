@@ -30,13 +30,13 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
         }
         return $footer;
     }
-    
+
     function jojo_cart_admin_email_bottom()
     {
         global $smarty;
         return $smarty->fetch('jojo_affiliate_jojo_cart_admin_email_bottom.tpl');
     }
-    
+
     function jojo_cart_success($cart=false)
     {
         /* record affiliate payment */
@@ -50,37 +50,37 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
 
         JOJO_Plugin_Jojo_affiliate::logSale($vars);
     }
-    
+
     /* adds a referral code box to the checkout form */
     function jojo_cart_extra_fields()
     {
         global $smarty;
         return $smarty->fetch('jojo_affiliate_jojo_cart_extra_fields.tpl');
     }
-    
+
     /* saves referral field to cart when checkout button is pressed */
     function jojo_cart_checkout_fields($fields)
     {
         $referralcode = Jojo::getFormData('ReferralCode', false);
-        
+
         /* if referral code has not been specified, check their cookies */
         if (!$referralcode) {
             $referralcode = JOJO_Plugin_Jojo_affiliate::getAffiliateCode();
         }
-        
+
         if ($referralcode) $fields['ReferralCode'] = $referralcode;
-        
-        
+
+
         $userid = JOJO_Plugin_Jojo_affiliate::parseReferralString($referralcode);
-        
+
         /* set affiliate cookie, without overwriting any existing cookies */
         if ($userid) {
             JOJO_Plugin_Jojo_affiliate::setAffiliateCode($userid, false);
         }
-        
+
         return $fields;
     }
-    
+
     function logSale($vars)
     {
         /* make sure an affiliate cookie has been set, or an affiliate ID was passed with the transaction vars */
@@ -98,6 +98,7 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
         $users = Jojo::selectQuery("SELECT * FROM {user} WHERE userid = ?", $affiliateid);
         if (!count($users)) return false;
         $affiliate = $users[0];
+        $affiliate['us_affcommission'] = $affiliate['us_affcommission'] * 1;
 
         /* get sale details */
         $commrate      = (!empty($affiliate['us_affcommission'])) ? $affiliate['us_affcommission'] : Jojo::getOption('affiliate_default_percentage', 10);
@@ -123,7 +124,7 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
         $message = "Hi ".$affiliate['us_firstname'].",\n\nA sale has been recorded on your affiliate account at "._SITETITLE.".\n\nThis sale has earned you $currency".JOJO_Plugin_Jojo_affiliate::getCurrencySymbol($currency).number_format($commamount, 2, '.', ',')." in commission, so thanks for your hard work promoting our products.\nYou can login to your affiliate account at "._SITEURL."/affiliates/ anytime to check your balance, and manage your account. We pay out affiliates at the end of each month when the commission earned is above ".Jojo::getOption('affiliate_payment_currency')."\$".Jojo::getOption('affiliate_payment_minimum').".\n\nThanks again,\n\nThe team at "._SITETITLE;
         Jojo::simpleMail($affiliate['us_firstname'].' '.$affiliate['us_lastname'], $affiliate['us_email'], $subject, $message);
     }
-    
+
     /* sessions are available between http / https whereas cookies aren't always shared. So affiliateid is best kept in the session */
     function cookie2session()
     {
@@ -169,7 +170,7 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
         }
         return false;
     }
-    
+
     /* attempts to find an affiliate id based on email, referral code, paypal address or ID */
     function parseReferralString($string)
     {
@@ -177,13 +178,13 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
         static $_cache;
         if (!isset($_cache)) $_cache = array();
         if (isset($_cache[$string])) return $_cache[$string];
-        
+
         /* remove whitespace */
         $string = trim($string);
-        
+
         /* empty strings won't get you anywhere */
         if (empty($string)) return false;
-        
+
         /* check for 'a1234', being the code used in affiliate links */
         preg_match_all('/^a([\\d]+)$/i', $string, $result, PREG_PATTERN_ORDER);
         if (!empty($result[1][0])) {
@@ -194,7 +195,7 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
                 return $user['userid'];
             }
         }
-        
+
         /* check for '1234', being the user id / affiliate id */
         preg_match_all('/^([\\d]+)$/i', $string, $result, PREG_PATTERN_ORDER);
         if (!empty($result[1][0])) {
@@ -205,7 +206,7 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
                 return $user['userid'];
             }
         }
-        
+
         /* check for 'user@domain.com' - the affiliate's email address or PayPal address*/
         if (Jojo::checkEmailFormat($string)) {
              /* verify user exists */
@@ -215,21 +216,21 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
                 return $user['userid'];
             }
         }
-        
+
         /* check for referral code - any other string*/
         $user = Jojo::selectRow("SELECT userid FROM {user} WHERE us_referralcode=?", array($string));
         if (!empty($user['userid'])) {
             $_cache[$string] = $user['userid'];
             return $user['userid'];
         }
-        
+
         /* check string against login / username */
         $user = Jojo::selectRow("SELECT userid FROM {user} WHERE us_login=?", array($string));
         if (!empty($user['userid'])) {
             $_cache[$string] = $user['userid'];
             return $user['userid'];
         }
-        
+
         $_cache[$string] = false;
         return false;
     }
@@ -273,7 +274,7 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
             $domains = Jojo::selectQuery("SELECT * FROM {aff_domain} WHERE approvecode=?", $code);
             if (count($domains)) {
                 Jojo::updateQuery("UPDATE {aff_domain} SET approved='yes' WHERE domainid=?", $domains[0]['domainid']);
-                echo 'Doimain approved: '.$domains[0]['domain'];
+                echo 'Domain approved: '.$domains[0]['domain'];
                 /* todo: email the affiliate */
                 exit;
             }
@@ -281,7 +282,7 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
             $domains = Jojo::selectQuery("SELECT * FROM {aff_domain} WHERE declinecode=?", $code);
             if (count($domains)) {
                 Jojo::updateQuery("UPDATE {aff_domain} SET approved='no' WHERE domainid=?", $domains[0]['domainid']);
-                echo 'Doimain declined: '.$domains[0]['domain'];
+                echo 'Domain declined: '.$domains[0]['domain'];
                 /* todo: email the affiliate */
                 exit;
             }
@@ -332,7 +333,7 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
 
         return $content;
     }
-    
+
     /* returns a $ for USD, NZD, AUD etc */
     /* todo - add more currencies, check for character set issues */
     function getCurrencySymbol($currency)

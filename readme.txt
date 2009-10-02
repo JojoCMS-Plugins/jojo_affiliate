@@ -1,6 +1,9 @@
 This plugin is under construction.
 
-For this plugin to work, you need to include the following code on the thank you page of your shopping cart - so slaes can be credited to affiliates...
+The plugin will automatically work with the jojo_cart plugins
+- with no changes to the code
+
+OR include the following code on the thank you page of your shopping cart - so sales can be credited to affiliates...
 
 
 /* record affiliate payment */
