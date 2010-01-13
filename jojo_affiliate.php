@@ -40,7 +40,6 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
     function jojo_cart_success($cart=false)
     {
         /* record affiliate payment */
-
         $vars = array(
                       'amount'        => $cart->order['amount'],
                       'transactionid' => $cart->token,
@@ -301,6 +300,7 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
         /* all sales recorded by this affiliate */
         $sales = Jojo::selectQuery("SELECT * FROM {aff_sale} WHERE userid=?", $_USERID);
         $n = count($sales);
+        $totals=array();
         for ($i=0; $i<$n; $i++) {
             $sales[$i]['commission'] = ($sales[$i]['commissionfixed'] > 0) ? $sales[$i]['commissionfixed'] : ($sales[$i]['commissionpercent'] * $sales[$i]['amount'] / 100);
             $totals[$sales[$i]['currency']] += $sales[$i]['commission'];
@@ -311,6 +311,7 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
         /* unpaidsales - sales since the last payment was made */
         $unpaidsales = Jojo::selectQuery("SELECT * FROM {aff_sale} WHERE paymentid=0 AND userid=?", $_USERID);
         $n = count($unpaidsales);
+        $unpaidtotals=array();
         for ($i=0;$i<$n;$i++) {
             $unpaidsales[$i]['commission'] = ($unpaidsales[$i]['commissionfixed']>0) ? $unpaidsales[$i]['commissionfixed'] : ($unpaidsales[$i]['commissionpercent'] * $unpaidsales[$i]['amount'] / 100);
             $unpaidtotals[$unpaidsales[$i]['currency']] += $unpaidsales[$i]['commission'];
