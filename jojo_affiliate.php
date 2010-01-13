@@ -40,12 +40,13 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
     function jojo_cart_success($cart=false)
     {
         /* record affiliate payment */
+
         $vars = array(
                       'amount'        => $cart->order['amount'],
                       'transactionid' => $cart->token,
                       'currency'      => $cart->order['currency'],
                       'items'         => $cart->items,
-                      'affiliateid'   => JOJO_Plugin_Jojo_affiliate::parseReferralString($cart->fields['ReferralCode'])
+                      'affiliateid'   => isset($cart->fields['ReferralCode']) ? JOJO_Plugin_Jojo_affiliate::parseReferralString($cart->fields['ReferralCode']):''
                       );
 
         JOJO_Plugin_Jojo_affiliate::logSale($vars);
