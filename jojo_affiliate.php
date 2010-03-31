@@ -242,7 +242,7 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
         $existingcode = isset($_COOKIE['aff']) ? $_COOKIE['aff'] : 0;
         if ($existingcode && !$allowoverride) return false;
         $days = Jojo::getOption('affiliate_cookie_expiry', 90);
-        setcookie('aff', $affiliateid, time() + (60 * 60 * 24 * $days), '/' . _SITEFOLDER);
+        setcookie('aff', $affiliateid, time() + (60 * 60 * 24 * $days), '/');
         $_SESSION['aff'] = $affiliateid;
         return true;
     }
