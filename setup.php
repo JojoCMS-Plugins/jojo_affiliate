@@ -50,3 +50,22 @@ if (Jojo::tableExists('user')) {
         Jojo::structureQuery("ALTER TABLE {user} ADD `us_affcommission` DECIMAL(10,2) NOT NULL;");
     }
 }
+
+/* add extra fields to discount table */
+if (Jojo::tableExists('discount')) {
+    /* add field for affiliate (User ID) */
+    if (!Jojo::fieldexists('discount', 'userid')) {
+        echo "Add <b>userid</b> to <b>discount</b><br />";
+        Jojo::structureQuery("ALTER TABLE {discount} ADD `userid` INT(11) NOT NULL DEFAULT 0;");
+    }
+    /* add field for affiliate percentage */
+    if (!Jojo::fieldexists('discount', 'affiliatepercent')) {
+        echo "Add <b>affiliatepercent</b> to <b>discount</b><br />";
+        Jojo::structureQuery("ALTER TABLE {discount} ADD `affiliatepercent` decimal(10,0) NOT NULL DEFAULT 0.0;");
+    }
+    /* add field for set affiliate cookie */
+    if (!Jojo::fieldexists('discount', 'setaffiliatecookie')) {
+        echo "Add <b>setaffiliatecookie</b> to <b>discount</b><br />";
+        Jojo::structureQuery("ALTER TABLE {discount} ADD `setaffiliatecookie` ENUM('yes','no') NOT NULL DEFAULT 'no';");
+    }
+}

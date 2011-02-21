@@ -47,15 +47,42 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
                       'items'         => $cart->items,
                       'affiliateid'   => isset($cart->fields['ReferralCode']) ? JOJO_Plugin_Jojo_affiliate::parseReferralString($cart->fields['ReferralCode']):''
                       );
-
+        /* make some adjustments if an affiliate discount code is set */
+        if (!empty($cart->discount['affiliate_percent'])) $vars['commrate'] = $cart->discount['affiliate_percent'];
+        if (!empty($cart->discount['affiliate_id'])) $vars['affiliateid']   = $cart->discount['affiliate_id'];
+        if (!empty($cart->discount['code'])) $vars['discountcode']          = $cart->discount['code'];       
+        
         JOJO_Plugin_Jojo_affiliate::logSale($vars);
     }
 
     /* adds a referral code box to the checkout form */
     function jojo_cart_extra_fields()
     {
+        $cart = call_user_func(array(Jojo_Cart_Class, 'getCart'));
+        if (isset($cart->discount['affiliate_id'])) return ''; //hide the referral field if the customer has already entered an affiliate discount code
         global $smarty;
         return $smarty->fetch('jojo_affiliate_jojo_cart_extra_fields.tpl');
+    }
+    
+    /* saves the affiliate data to session when a discount code is applied */
+    function apply_discount_code($cart, $discount)
+    {
+        if (($discount['setaffiliatecookie'] == 'yes') && !empty($cart->discount['affiliate_id'])) {
+            /* set an affiliate cookie */
+            self::setAffiliateCode($discount['userid'], true); //sets the affiliate cookie - this overrides any existing affiliate cookie
+            unset($cart->discount['affiliate_percent']);
+            $cart->discount['affiliate_id'] = $discount['userid'];
+            //unset($cart->discount['affiliate_id']);
+        } elseif (!empty($discount['affiliatepercent'])) {
+            /* affiliate discount code - save to the cart for later*/
+            $cart->discount['affiliate_percent'] = $discount['affiliatepercent'];
+            $cart->discount['affiliate_id']      = $discount['userid'];
+        } else {
+            /* regular discount code - make sure and affiliate discount code data is wiped*/
+            unset($cart->discount['affiliate_percent']);
+            unset($cart->discount['affiliate_id']);
+        }
+        return true;
     }
 
     /* saves referral field to cart when checkout button is pressed */
@@ -101,13 +128,18 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
         $affiliate['us_affcommission'] = $affiliate['us_affcommission'] * 1;
 
         /* get sale details */
-        $commrate      = (!empty($affiliate['us_affcommission'])) ? $affiliate['us_affcommission'] : Jojo::getOption('affiliate_default_percentage', 10);
+        if (isset($vars['commrate'])) {
+            $commrate = $vars['commrate'];
+        } else {
+            $commrate      = (!empty($affiliate['us_affcommission'])) ? $affiliate['us_affcommission'] : Jojo::getOption('affiliate_default_percentage', 10);
+        }
+        $discountcode = (isset($vars['discountcode'])) ? $vars['discountcode'] : '';
         $amount        = $vars['amount'];
         $currency      = Jojo::either($vars['currency'], Jojo::getOption('affiliate_payment_currency'), 'USD');
         $transactionid = Jojo::either($vars['transactionid'], 0);
         $commamount    = $amount * $commrate / 100;
 
-        Jojo::insertQuery("INSERT INTO {aff_sale} SET userid=?, transactionid=?, amount=?, commissionpercent=?, commissionfixed=?, currency=?, datetime=?",
+        Jojo::insertQuery("INSERT INTO {aff_sale} SET userid=?, transactionid=?, amount=?, commissionpercent=?, commissionfixed=?, currency=?, discountcode=?, datetime=?",
         array(
              $affiliateid,
              $transactionid,
@@ -115,6 +147,7 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
              $commrate,
              0,
              $currency,
+             $discountcode,
              time()
              )
         );
@@ -266,7 +299,62 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
         global $smarty, $_USERID;
         $content = array();
 
-        $code = Util::getFormData('code', false);
+        $code = Jojo::getFormData('code', false);
+        $save_discount_code = Jojo::getFormData('save_discount_code', false);
+        
+        /* adding or updating affiliate discount codes */
+        if ($save_discount_code) {
+            $discount_code        = Jojo::getFormData('discount_code', false);
+            $affiliate_commission = Jojo::getFormData('affiliate_commission', false);
+            $customer_commission  = Jojo::getFormData('customer_commission', false);
+            $discount_code_min_length = 4;
+            $discount_min_percentage = 1;
+            
+            $smarty->assign('discount_code',        $discount_code);
+            $smarty->assign('affiliate_commission', $affiliate_commission);
+            $smarty->assign('customer_commission',  $customer_commission);
+            
+            $errors = array();
+
+            /* does this code exist, and does it belong to this affiliate? */
+            $discount = Jojo::selectRow("SELECT * FROM {discount} WHERE discountcode=?", $discount_code);
+            if (empty($discount_code)) {
+                $errors[] = 'Please enter a discount code';
+            } elseif (!empty($discount['discountcode']) && ($discount['userid'] != $_USERID)) {
+                $errors[] = 'The discount code \''.$discount_code.'\' already exists and is in use by another affiliate.';
+            } elseif (!empty($discount['discountcode'])) {
+                /* existing discount code */
+                $new = false;
+            } else {
+                /* new discount code */
+                $new = true;
+                if ($discount_code_min_length > strlen($discount_code)) $errors[] = 'Discount codes must be at least '.$discount_code_min_length.' characters.';
+            }
+            
+            if (($discount_min_percentage > $affiliate_commission) || ($discount_min_percentage > $customer_commission)) $errors[] = 'The affiliate percentage and the customer percentage must both be at least '.$discount_min_percentage.'%.';
+            
+            /* get this user's commission rate */
+            $user = Jojo::selectQuery("SELECT us_paypal, us_affcommission FROM {user} WHERE userid=?", $_USERID);
+            $rate = max($user[0]['us_affcommission'], Jojo::getOption('affiliate_default_percentage', 0));
+            
+            if (($affiliate_commission + $customer_commission) != $rate) $errors[] = 'The affiliate percentage plus the customer percentage must add up to '.$rate.'%.';
+            
+            if (count($errors)) {
+                /* errors */
+                $smarty->assign('errors', $errors);
+            } else {
+                /* proceed */
+                $query = " {discount} SET setaffiliatecookie='no', name=?, discountcode=?, discountpercent=?, affiliatepercent=?, userid=?";
+                $values = array('Discount', $discount_code, $customer_commission, $affiliate_commission, $_USERID);
+                if ($new) {
+                    Jojo::insertQuery('INSERT INTO'.$query, $values);
+                } else {
+                    $values[] = $discount_code;
+                    Jojo::updateQuery('UPDATE'.$query.' WHERE discountcode=? LIMIT 1', $values);
+                }
+                Jojo::redirect(_SITEURL.'/affiliates/');
+            }
+        }
 
         /* if a code has been set, approve or decline */
         if ($code) {
@@ -322,10 +410,24 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
         /* get info on domains registered to this affiliate */
         $domains = Jojo::selectQuery("SELECT * FROM {aff_domain} WHERE userid=?", $_USERID);
         $smarty->assign('domains', $domains);
+        
+        /* get discount codes belonging to this affiliate */
+        $data = Jojo::selectQuery("SELECT * FROM {discount} WHERE userid=? AND (startdate=0 OR startdate<=?) AND (finishdate=0 OR finishdate>=?)", array($_USERID, time(), time()));
+        $admin_created_discounts = array();
+        $user_created_discounts = array();
+        foreach ($data as $d) {
+            if ($d['setaffiliatecookie'] == 'yes') $admin_created_discounts[] = $d; else $user_created_discounts = $d;
+        }
+        $smarty->assign('admin_created_discounts', $admin_created_discounts);
+        $smarty->assign('user_created_discounts', $user_created_discounts);
+        
+        $default_currency_symbol = call_user_func(array(Jojo_Cart_Class, 'getCurrencySymbol'), Jojo::getOption('cart_default_currency', ''));
+        $smarty->assign('default_currency_symbol', $default_currency_symbol);
 
-        /* get paypal address */
-        $user = Jojo::selectQuery("SELECT us_paypal FROM {user} WHERE userid=?", $_USERID);
+        /* get paypal address + this user's commission rate */
+        $user = Jojo::selectQuery("SELECT us_paypal, us_affcommission FROM {user} WHERE userid=?", $_USERID);
         $smarty->assign('paypal', $user[0]['us_paypal']);
+        $smarty->assign('commission_rate', max($user[0]['us_affcommission'], Jojo::getOption('affiliate_default_percentage', 0)));
 
         /* calculate the next payment date */
         $smarty->assign('nextpayment', JOJO_Plugin_Jojo_affiliate::getNextPaymentDate());

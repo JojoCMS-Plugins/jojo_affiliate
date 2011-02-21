@@ -16,11 +16,12 @@
  */
 
 /* get the first look at the parsepage data */
-Jojo::addHook('jojo_before_parsepage',  'cookie2session',         'jojo_affiliate');
-Jojo::addHook('jojo_before_parsepage',  'matchAffiliateLink',     'jojo_affiliate');
-Jojo::addHook('jojo_before_parsepage',  'matchAffiliateDomain',   'jojo_affiliate');
-Jojo::addHook('jojo_cart_success',      'jojo_cart_success',      'jojo_affiliate'); //integrate with the jojo_cart plugin
-Jojo::addHook('jojo_cart_extra_fields', 'jojo_cart_extra_fields', 'jojo_affiliate'); //integrate with the jojo_cart plugin
+Jojo::addHook('jojo_before_parsepage',         'cookie2session',         'jojo_affiliate');
+Jojo::addHook('jojo_before_parsepage',         'matchAffiliateLink',     'jojo_affiliate');
+Jojo::addHook('jojo_before_parsepage',         'matchAffiliateDomain',   'jojo_affiliate');
+Jojo::addHook('jojo_cart_success',             'jojo_cart_success',      'jojo_affiliate'); //integrate with the jojo_cart plugin
+Jojo::addHook('jojo_cart_extra_fields',        'jojo_cart_extra_fields', 'jojo_affiliate'); //integrate with the jojo_cart plugin
+Jojo::addHook('jojo_cart_apply_discount_code', 'apply_discount_code',    'jojo_affiliate');
 
 Jojo::addFilter('jojo_cart_checkout_fields', 'jojo_cart_checkout_fields', 'jojo_affiliate');
 Jojo::addFilter('jojo_cart_checkout:populate_fields', 'jojo_cart_checkout_fields', 'jojo_affiliate');
@@ -97,5 +98,16 @@ $_options[] = array(
     'type'        => 'integer',
     'default'     => '10',
     'options'     => '',
+    'plugin'      => 'jojo_affiliate'
+);
+
+$_options[] = array(
+    'id'          => 'affiliate_discount_codes',
+    'category'    => 'Affiliates',
+    'label'       => 'Allow affiliate-created discount codes',
+    'description' => 'If yes, affiliates can create their own discount codes. Some of their affiliate commission is given to the customer..',
+    'type'        => 'radio',
+    'default'     => 'no',
+    'options'     => 'yes,no',
     'plugin'      => 'jojo_affiliate'
 );

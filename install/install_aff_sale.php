@@ -31,6 +31,7 @@ $query = "
       `commissionpercent` decimal(10,2) NOT NULL default '0.00',
       `commissionfixed` decimal(10,2) NOT NULL default '0.00',
       `currency` VARCHAR( 255 ) NOT NULL default 'USD',
+      `discountcode` VARCHAR( 255 ) NOT NULL default '',
       `paymentid` int(11) NOT NULL default '0',
       `paymentdate` int(11) NOT NULL default '0',
       `datetime` int(11) NOT NULL default '0',

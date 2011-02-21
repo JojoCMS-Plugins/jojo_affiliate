@@ -1,3 +1,4 @@
+{include file='errors.tpl'}
 <div>
   Affiliate ID: <strong>{$userid}</strong><br />
   {foreach from=$unpaidtotals key=curr item=total}
@@ -13,12 +14,13 @@
 <div>
 <h3>History</h3>
 {if $sales}
-<table>
+<table width="100%" border="1" style="border-collapse:collapse">
   <thead>
     <tr>
       <th>Date</th>
       <th>Order Total</th>
       <th>Currency</th>
+      {if $admin_created_discounts || $user_created_discounts}<th>Discount Code</th>{/if}
       <th>Commission</th>
     </tr>
   </thead>
@@ -28,14 +30,15 @@
       <tr>
         <td>{$sales[s].datetime|date_format}</td>
         <td style="text-align: right">{$sales[s].amount|number_format:'2'}</td>
-        <td>{$sales[s].currency}</td>
+        <td style="text-align: center">{$sales[s].currency}</td>
+        {if $admin_created_discounts || $user_created_discounts}<td style="text-align: center">{$sales[s].discountcode}</td>{/if}
         <td style="text-align: right">{$sales[s].commission|number_format:'2'}</td>
       </tr>
       {/section}
 
       {foreach from=$totals key=curr item=total}
       <tr>
-        <td style="text-align: right" colspan="3"><strong>Total {$curr} commission:</strong></td>
+        <td style="text-align: right" colspan="{if $admin_created_discounts || $user_created_discounts}4{else}3{/if}"><strong>Total {$curr} commission:</strong></td>
         <td style="text-align: right"><strong>{$total|number_format:'2'}</strong></td>
       </tr>
       {/foreach}
@@ -63,6 +66,62 @@
   </form>
 </div>
 </div>
+
+{if $admin_created_discounts || $user_created_discounts}
+<div>
+    <h3>Discount codes</h3>
+    {if  $OPTIONS.affiliate_discount_codes == 'yes'}
+    <p>Affiliate discount codes allow you to give away some of your affiliate commission to the customer, making them more likely to use the code. You can choose how much of your commission you give away.</p>
+    
+    <form method="post" action="">
+        <table width="100%" border="1" style="border-collapse:collapse">
+            <tr>
+                <th>Discount code</th>
+                <th>Affiliate %</th>
+                <th>Customer %</th>
+                <th>Actions</th>
+            </tr>
+            {foreach from=$user_created_discounts item=d}
+            <tr>
+                <td><strong>{$d.discountcode}</strong></td>
+                <td>{$d.affiliatepercent}%</td>
+                <td>{$d.discountpercent}%</td>
+                <td></td>
+            </tr>
+            {/foreach}
+            
+            <tr>
+                <td><input type="text" size="8" id="discount_code" name="discount_code" value="{$discount_code}" /></td>
+                <td><input type="text" size="5" id="affiliate_commission" name="affiliate_commission" value="{$affiliate_commission|default:$commission_rate}" />%</td>
+                <td><input type="text" size="5" id="customer_commission" name="customer_commission" value="{$customer_commission|default:'0'}" />%</td>
+                <td><input type="submit" name="save_discount_code" value="save" /></td>
+            </tr>
+        </table>
+    </form>
+    <p>The affiliate percentage and customer percentage must add up to <span id="commission_rate">{$commission_rate}</span>%.</p>
+    {/if}
+    {if $admin_created_discounts}
+    <p>If a customer uses one of the following discount codes, you will be credited for the sale and your affiliate cookie will be set in the customer's browser for up to {$OPTIONS.affiliate_cookie_expiry} days.</p>
+    <table width="100%" border="1" style="border-collapse:collapse">
+        <tr>
+            <th>Discount code</th>
+            <th>Discount</th>
+            <th>Minimum order value</th>
+        </tr>
+        {foreach from=$admin_created_discounts item=d}
+        {if $d.setaffiliatecookie=='yes'}
+        <tr>
+            <td><strong>{$d.discountcode}</strong></td>
+            <td>{if $d.discountpercent}{$d.discountpercent}%{/if} {if $d.discountfixed}{$OPTIONS.cart_default_currency}{$default_currency_symbol}{$d.discountfixed}{/if}</td>
+            <td>{$OPTIONS.cart_default_currency}{$default_currency_symbol}{$d.minorder}</td>
+        </tr>
+        {/if}
+        {/foreach}
+    </table>
+    <p>Please <a href="mailto:{$OPTIONS.contactaddress}">contact us</a> to arrange additional discount codes if required.</p>
+    {/if}
+</div>
+{/if}
 
 <div>
 <h3>Paypal address</h3>
