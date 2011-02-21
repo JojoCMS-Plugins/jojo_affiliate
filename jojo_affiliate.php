@@ -67,7 +67,7 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
     /* saves the affiliate data to session when a discount code is applied */
     function apply_discount_code($cart, $discount)
     {
-        if (($discount['setaffiliatecookie'] == 'yes') && !empty($cart->discount['affiliate_id'])) {
+        if (($discount['setaffiliatecookie'] == 'yes') && !empty($discount['userid'])) {
             /* set an affiliate cookie */
             self::setAffiliateCode($discount['userid'], true); //sets the affiliate cookie - this overrides any existing affiliate cookie
             unset($cart->discount['affiliate_percent']);
