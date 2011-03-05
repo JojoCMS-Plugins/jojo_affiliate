@@ -437,6 +437,37 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
 
         return $content;
     }
+    
+    function jojo_cart_transaction_report_th()
+    {
+        return '<th>Affiliate</th><th>Discount code</th>';
+    }
+    
+    function jojo_cart_transaction_report_td()
+    {
+        global $smarty;
+        static $_affiliates;
+        /* need to make the row data available to the template again, however the method for doing this depends whether Dwoo or Smarty is being used */
+        if (Jojo::getOption('templateengine', false) == 'dwoo') {
+        $data = $smarty->getData();
+            $transaction = $data['transaction'];
+        } elseif (Jojo::getOption('templateengine', false) == 'smarty') {
+            $transaction = $smarty->_tpl_vars['transaction']; //shouldn't be accessing private vars directly, but $smarty->getConfigVars() doesn't appear to work as documented
+        } else {
+            return false;
+        }
+        $affid = self::parseReferralString($transaction['data']->fields['ReferralCode']);
+        
+        if ($affid && isset($_affiliates[$affid])) {
+            $affilite = $_affiliates[$affid];
+        } elseif ($affid) {
+            $affilite = Jojo::selectRow("SELECT * FROM {user} WHERE userid=?", $affid);
+            $_affiliates[$affid] = $_affiliates[$affid];
+        }
+        $smarty->assign('aff_username', $affilite['us_login']);
+        $smarty->assign('discount_code', $transaction['data']->discount['code']);
+        return $smarty->fetch('jojo_affiliate_transaction_report_columns.tpl');
+    }
 
     /* returns a $ for USD, NZD, AUD etc */
     /* todo - add more currencies, check for character set issues */

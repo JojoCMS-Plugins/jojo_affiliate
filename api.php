@@ -16,12 +16,14 @@
  */
 
 /* get the first look at the parsepage data */
-Jojo::addHook('jojo_before_parsepage',         'cookie2session',         'jojo_affiliate');
-Jojo::addHook('jojo_before_parsepage',         'matchAffiliateLink',     'jojo_affiliate');
-Jojo::addHook('jojo_before_parsepage',         'matchAffiliateDomain',   'jojo_affiliate');
-Jojo::addHook('jojo_cart_success',             'jojo_cart_success',      'jojo_affiliate'); //integrate with the jojo_cart plugin
-Jojo::addHook('jojo_cart_extra_fields',        'jojo_cart_extra_fields', 'jojo_affiliate'); //integrate with the jojo_cart plugin
-Jojo::addHook('jojo_cart_apply_discount_code', 'apply_discount_code',    'jojo_affiliate');
+Jojo::addHook('jojo_before_parsepage',           'cookie2session',                  'jojo_affiliate');
+Jojo::addHook('jojo_before_parsepage',           'matchAffiliateLink',              'jojo_affiliate');
+Jojo::addHook('jojo_before_parsepage',           'matchAffiliateDomain',            'jojo_affiliate');
+Jojo::addHook('jojo_cart_success',               'jojo_cart_success',               'jojo_affiliate'); //integrate with the jojo_cart plugin
+Jojo::addHook('jojo_cart_extra_fields',          'jojo_cart_extra_fields',          'jojo_affiliate'); //integrate with the jojo_cart plugin
+Jojo::addHook('jojo_cart_apply_discount_code',   'apply_discount_code',             'jojo_affiliate');
+Jojo::addHook('jojo_cart_transaction_report_th', 'jojo_cart_transaction_report_th', 'jojo_affiliate');
+Jojo::addHook('jojo_cart_transaction_report_td', 'jojo_cart_transaction_report_td', 'jojo_affiliate');
 
 Jojo::addFilter('jojo_cart_checkout_fields', 'jojo_cart_checkout_fields', 'jojo_affiliate');
 Jojo::addFilter('jojo_cart_checkout:populate_fields', 'jojo_cart_checkout_fields', 'jojo_affiliate');
