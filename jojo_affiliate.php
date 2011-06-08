@@ -131,6 +131,7 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
         if (isset($vars['commrate'])) {
             $commrate = $vars['commrate'];
         } else {
+            $affiliate['us_affcommission'] = floatval($affiliate['us_affcommission']); //prevents string value of "0.00" being considered non-empty
             $commrate      = (!empty($affiliate['us_affcommission'])) ? $affiliate['us_affcommission'] : Jojo::getOption('affiliate_default_percentage', 10);
         }
         $discountcode = (isset($vars['discountcode'])) ? $vars['discountcode'] : '';
