@@ -50,8 +50,8 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
         /* make some adjustments if an affiliate discount code is set */
         if (!empty($cart->discount['affiliate_percent'])) $vars['commrate'] = $cart->discount['affiliate_percent'];
         if (!empty($cart->discount['affiliate_id'])) $vars['affiliateid']   = $cart->discount['affiliate_id'];
-        if (!empty($cart->discount['code'])) $vars['discountcode']          = $cart->discount['code'];       
-        
+        if (!empty($cart->discount['code'])) $vars['discountcode']          = $cart->discount['code'];
+
         JOJO_Plugin_Jojo_affiliate::logSale($vars);
     }
 
@@ -63,7 +63,7 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
         global $smarty;
         return $smarty->fetch('jojo_affiliate_jojo_cart_extra_fields.tpl');
     }
-    
+
     /* saves the affiliate data to session when a discount code is applied */
     function apply_discount_code($cart, $discount)
     {
@@ -302,7 +302,7 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
 
         $code = Jojo::getFormData('code', false);
         $save_discount_code = Jojo::getFormData('save_discount_code', false);
-        
+
         /* adding or updating affiliate discount codes */
         if ($save_discount_code) {
             $discount_code        = Jojo::getFormData('discount_code', false);
@@ -310,11 +310,11 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
             $customer_commission  = Jojo::getFormData('customer_commission', false);
             $discount_code_min_length = 4;
             $discount_min_percentage = 1;
-            
+
             $smarty->assign('discount_code',        $discount_code);
             $smarty->assign('affiliate_commission', $affiliate_commission);
             $smarty->assign('customer_commission',  $customer_commission);
-            
+
             $errors = array();
 
             /* does this code exist, and does it belong to this affiliate? */
@@ -331,15 +331,15 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
                 $new = true;
                 if ($discount_code_min_length > strlen($discount_code)) $errors[] = 'Discount codes must be at least '.$discount_code_min_length.' characters.';
             }
-            
+
             if (($discount_min_percentage > $affiliate_commission) || ($discount_min_percentage > $customer_commission)) $errors[] = 'The affiliate percentage and the customer percentage must both be at least '.$discount_min_percentage.'%.';
-            
+
             /* get this user's commission rate */
             $user = Jojo::selectQuery("SELECT us_paypal, us_affcommission FROM {user} WHERE userid=?", $_USERID);
             $rate = max($user[0]['us_affcommission'], Jojo::getOption('affiliate_default_percentage', 0));
-            
+
             if (($affiliate_commission + $customer_commission) != $rate) $errors[] = 'The affiliate percentage plus the customer percentage must add up to '.$rate.'%.';
-            
+
             if (count($errors)) {
                 /* errors */
                 $smarty->assign('errors', $errors);
@@ -411,7 +411,7 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
         /* get info on domains registered to this affiliate */
         $domains = Jojo::selectQuery("SELECT * FROM {aff_domain} WHERE userid=?", $_USERID);
         $smarty->assign('domains', $domains);
-        
+
         /* get discount codes belonging to this affiliate */
         $data = Jojo::selectQuery("SELECT * FROM {discount} WHERE userid=? AND (startdate=0 OR startdate<=?) AND (finishdate=0 OR finishdate>=?)", array($_USERID, time(), time()));
         $admin_created_discounts = array();
@@ -421,7 +421,7 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
         }
         $smarty->assign('admin_created_discounts', $admin_created_discounts);
         $smarty->assign('user_created_discounts', $user_created_discounts);
-        
+
         $default_currency_symbol = call_user_func(array(Jojo_Cart_Class, 'getCurrencySymbol'), Jojo::getOption('cart_default_currency', ''));
         $smarty->assign('default_currency_symbol', $default_currency_symbol);
 
@@ -438,12 +438,12 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
 
         return $content;
     }
-    
+
     function jojo_cart_transaction_report_th()
     {
         return '<th>Affiliate</th><th>Discount code</th>';
     }
-    
+
     function jojo_cart_transaction_report_td()
     {
         global $smarty;
@@ -457,17 +457,22 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
         } else {
             return false;
         }
-        $affid = self::parseReferralString($transaction['data']->fields['ReferralCode']);
-        
+
+        if(isset($transaction['data']->fields['ReferralCode'])) {
+          $affid = self::parseReferralString($transaction['data']->fields['ReferralCode']);
+        } else {
+        $affid = false;
+        }
+
         if ($affid && isset($_affiliates[$affid])) {
             $affilite = $_affiliates[$affid];
         } elseif ($affid) {
             $affilite = Jojo::selectRow("SELECT * FROM {user} WHERE userid=?", $affid);
             $_affiliates[$affid] = $_affiliates[$affid];
         }
-        $smarty->assign('aff_username', $affilite['us_login']);
-        $smarty->assign('discount_code', $transaction['data']->discount['code']);
-        return $smarty->fetch('jojo_affiliate_transaction_report_columns.tpl');
+          $smarty->assign('aff_username', (isset($affiliate)) ? $affilite['us_login']:'');
+          $smarty->assign('discount_code', (isset($transaction['data']->discount['code'])) ? $transaction['data']->discount['code']:'');
+          return $smarty->fetch('jojo_affiliate_transaction_report_columns.tpl');
     }
 
     /* returns a $ for USD, NZD, AUD etc */
