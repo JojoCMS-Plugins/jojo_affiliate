@@ -185,8 +185,9 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
         /* match the affiliate by referer */
         $r = !empty($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '';
         if (empty($r)) return false;
-        if (strpos($r, _SITEURL)) return false;
-        if (strpos($r, _SECUREURL)) return false;
+        
+        if (strpos($r, _SITEURL) === 0) return false;
+        if (strpos($r, _SECUREURL) === 0) return false;
 
         $q = "SELECT `userid`, `domain` FROM {aff_domain} WHERE approved='yes' AND (0";
         $values = array();
