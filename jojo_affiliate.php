@@ -41,7 +41,7 @@ class JOJO_Plugin_Jojo_affiliate extends JOJO_Plugin
     {
         /* record affiliate payment */
         $vars = array(
-                      'amount'        => $cart->order['amount'],
+                      'amount'        => $cart->order['subtotal'],
                       'transactionid' => $cart->token,
                       'currency'      => $cart->order['currency'],
                       'items'         => $cart->items,

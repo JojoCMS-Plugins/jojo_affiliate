@@ -1,2 +1,4 @@
+<div class="form-fieldset form-group">
   <label for="ReferralCode">Referral code:</label>
-  <input type="text" size="10" name="ReferralCode" id="ReferralCode" value="{$fields.ReferralCode}" title="If you were given a referral code, enter it here" /><br />
+  <input type="text" class="form-control input text"  name="ReferralCode" id="ReferralCode" value="{if $fields.ReferralCode}{$fields.ReferralCode}{/if}" title="If you were given a referral code, enter it here" />
+</div>

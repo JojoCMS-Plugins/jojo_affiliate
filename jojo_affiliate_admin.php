@@ -55,7 +55,7 @@ class JOJO_Plugin_Jojo_affiliate_admin extends JOJO_Plugin
         for ($i=0; $i<$n; $i++) {
             $data[$i]['commission'] = ($data[$i]['commissionfixed'] > 0) ? $data[$i]['commissionfixed'] : ($data[$i]['amount'] * $data[$i]['commissionpercent'] / 100);
             if (!isset($outstanding[$data[$i]['userid']])) $outstanding[$data[$i]['userid']] = array();
-            if (!isset($outstanding[$data[$i]['userid']])) $outstanding[$data[$i]['userid']][$data[$i]['currency']] = 0;
+            if (!isset($outstanding[$data[$i]['userid']]) || !isset($outstanding[$data[$i]['userid']][$data[$i]['currency']])) $outstanding[$data[$i]['userid']][$data[$i]['currency']] = 0;
             $outstanding[$data[$i]['userid']][$data[$i]['currency']] = $outstanding[$data[$i]['userid']][$data[$i]['currency']] + $data[$i]['commission'];
         }
         arsort($outstanding);
@@ -66,6 +66,7 @@ class JOJO_Plugin_Jojo_affiliate_admin extends JOJO_Plugin
             $data = Jojo::selectQuery("SELECT userid, us_login, us_firstname, us_lastname, us_paypal FROM {user} WHERE userid=?", $userid);
             $affiliate = array('userid'=>$data[0]['userid'] ,'login'=>$data[0]['us_login'], 'firstname'=>$data[0]['us_firstname'], 'lastname'=>$data[0]['us_lastname'], 'paypal'=>$data[0]['us_paypal']);
             foreach ($owing as $curr => $amount) {
+                if (!isset($currencies[$curr])) $currencies[$curr] = 0;
                 $affiliate[$curr]   = $amount;
                 $currencies[$curr] += $amount;
             }

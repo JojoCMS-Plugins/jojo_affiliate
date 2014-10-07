@@ -11,13 +11,13 @@
 
 <h3>Amounts outstanding</h3>
 <form method="post" action="{$ADMIN}/affiliates/">
-<table style="width: 500px">
+<table class="table">
   <thead>
   <tr>
     <th>Affiliate</th>
     <th>Paypal Address</th>
     {foreach from=$currencies key=k item=n}
-    <th>{$k}</th>
+    <th style="text-align: right">{$k}</th>
     {/foreach}
     <th>&nbsp;</th>
   </tr>
@@ -28,7 +28,7 @@
     <td>{$affiliates[a].firstname} {$affiliates[a].lastname} ({$affiliates[a].login})</td>
     <td>{$affiliates[a].paypal}</td>
     {foreach from=$currencies key=k item=n}
-    <td style="text-align: right">{if $affiliates[a].$k}{$affiliates[a].$k}{/if}</td>
+    <td style="text-align: right">{if $affiliates[a].$k}{number_format($affiliates[a].$k, 2)}{/if}</td>
     
     {/foreach}
     <td><input type="checkbox" name="pay_affiliate[]" value="{$affiliates[a].userid}" /> </td>
@@ -40,12 +40,12 @@
     <td>&nbsp;</td>
     <td style="text-align: right">Totals:</td>
     {foreach from=$currencies key=k item=v}
-    <th style="text-align: right">{$v}</th>
+    <th style="text-align: right">{number_format($v, 2)}</th>
     {/foreach}
   </tr>
   </tfoot>
 </table>
-<input type="submit" name="pay" value="Mark selected affiliates as paid" onclick="return (confirm('This will mark all sales for selected affiliates as being paid. Please ensure the affiliate has been paid the listed amount, and keep your own records relating to this payment as logging within the affiliate system is minimal. Are you sure you wish to continue?'));" />
+<input class="btn btn-default" type="submit" name="pay" value="Mark selected affiliates as paid" onclick="return (confirm('This will mark all sales for selected affiliates as being paid. Please ensure the affiliate has been paid the listed amount, and keep your own records relating to this payment as logging within the affiliate system is minimal. Are you sure you wish to continue?'));" />
 </form>
 
 Payout minimum: USD${$OPTIONS.affiliate_payment_minimum}<br />
